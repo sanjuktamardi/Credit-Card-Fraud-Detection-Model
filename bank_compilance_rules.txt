@@ -1,0 +1,183 @@
+# CREDIT CARD FRAUD DETECTION — RISK ASSESSMENT AND RESPONSE STANDARD OPERATING PROCEDURE (FDS-SOP-001)
+
+## RULE 1: MACHINE LEARNING FRAUD CLASSIFICATION
+
+- If `Fraud_Label = 1`, classify the transaction as **Potential Fraud — ML Flagged**.
+- If `Fraud_Label = 0`, classify the transaction as **Model Classified as Non-Fraudulent**.
+- If the model prediction is unavailable or invalid, classify the ML assessment as **Unavailable**.
+- A predicted class is not definitive proof of fraud or legitimacy.
+- Never change the model's prediction based solely on the AI Investigator's opinion.
+
+## RULE 2: RISK SCORE VALIDATION
+
+- Before interpreting `Risk_Score`, verify its documented scale, calculation method, and meaning.
+- If the score is normalized between 0 and 1 and documented as a fraud risk score, apply the following provisional thresholds:
+  - `0.00–0.29`: Low numerical risk.
+  - `0.30–0.59`: Moderate numerical risk.
+  - `0.60–0.79`: Elevated numerical risk.
+  - `0.80–1.00`: High numerical risk.
+- These thresholds are provisional project settings and must be validated against historical data before production use.
+- If the score is expressed on a 0–100 scale, do not apply the 0–1 thresholds directly. Use the corresponding documented scale only after confirming that the scores are equivalent.
+- If the scale or meaning is unknown, report `Risk_Score` as **Unverified — Scale Unknown**.
+- Never assume that a risk score represents model confidence or predicted fraud probability unless its calculation confirms this.
+
+## RULE 3: MACHINE LEARNING PREDICTED PROBABILITY
+
+- Use `predict_proba` or the model's documented equivalent only if the trained model supports probability estimates.
+- Report the predicted probability of the fraud class, not merely the probability of whichever class was predicted.
+- Do not invent a probability when the model only returns a class label.
+- Distinguish predicted probability from calibration, model confidence, and the independently calculated risk score.
+- If probability calibration has not been evaluated, describe the value as an uncalibrated model estimate.
+
+## RULE 4: FLAGGED IP ADDRESS
+
+- If `IP_Address_Flag = 1`, mark the transaction for additional security review.
+- If `IP_Address_Flag = 0`, report that no flagged-IP indicator was supplied by this feature.
+- Do not claim that an IP address is globally safe or verified merely because its flag equals zero.
+- A flagged IP alone does not prove fraud or authorize account suspension.
+
+## RULE 5: PREVIOUS FRAUDULENT ACTIVITY
+
+- If `Previous_Fraudulent_Activity = 1`, increase investigation priority and consider enhanced authentication.
+- If `Previous_Fraudulent_Activity = 0`, report that no previous fraudulent activity was indicated by this field.
+- Do not automatically classify the current transaction as fraudulent based on historical activity alone.
+
+## RULE 6: TRANSACTION AMOUNT AND SPENDING BEHAVIOR
+
+- Compare `Transaction_Amount` with `Avg_Transaction_Amount_7d` when both values are available and use compatible units.
+- Calculate the amount ratio as:
+
+  `Amount_Ratio = Transaction_Amount / Avg_Transaction_Amount_7d`
+
+- If the seven-day average is greater than zero:
+  - `Amount_Ratio <= 1.0`: The transaction amount is at or below the supplied average.
+  - `1.0 < Amount_Ratio < 2.0`: The amount exceeds the average but is less than twice that average.
+  - `Amount_Ratio >= 2.0`: Flag for spending-pattern review.
+- These ratio thresholds are provisional and must be validated against the dataset.
+- A transaction at or below the average is not automatically legitimate.
+- If the average is zero, missing, or invalid, do not calculate the ratio. Report the comparison as unavailable.
+- Consider `Account_Balance` as contextual information only. A sufficient balance does not establish legitimacy.
+
+## RULE 7: TRANSACTION FREQUENCY
+
+- Evaluate `Daily_Transaction_Count` against a documented customer baseline or a threshold validated using training or historical data.
+- If the count exceeds the validated threshold, flag the transaction for velocity review.
+- If no threshold or baseline is available, report the count without declaring it unusually high.
+- A high transaction count alone does not confirm fraud.
+
+## RULE 8: FAILED TRANSACTIONS
+
+- Evaluate `Failed_Transaction_Count_7d` using a validated threshold.
+- If the count exceeds that threshold, recommend investigation of possible suspicious attempts.
+- If the count is zero, report that no failed transactions were indicated by this feature.
+- Do not assume that every failed transaction is fraudulent or that zero failed transactions guarantees safety.
+
+## RULE 9: TRANSACTION DISTANCE
+
+- Verify the units and reference location for `Transaction_Distance`.
+- If the distance exceeds the documented threshold of 2000 units, flag it for location-related review only when the threshold and units are applicable.
+- If the units or reference are unknown, report the distance as unverified.
+- A short distance does not establish that the transaction is legitimate.
+
+## RULE 10: TIME AND WEEKEND INDICATORS
+
+- Use `Hour`, `Date`, `Month`, `Dayofweek`, `is_night`, and `Is_Weekend` as contextual features.
+- If `is_night = 1`, record nighttime activity as a contextual indicator, not as proof of fraud.
+- Do not flag a weekend transaction or a transaction at a particular hour solely because of its timing.
+- Identify unusual timing only when a validated historical baseline or an explicit applicable rule supports the conclusion.
+- Verify the date, time zone, and day-of-week encoding when inconsistencies appear.
+
+## RULE 11: DEVICE AND AUTHENTICATION
+
+- Evaluate `Device_Type`, `Authentication_Method`, and `IP_Address_Flag` together with other available indicators.
+- Biometric authentication may be a positive contextual signal, but it does not guarantee that the cardholder authorized the transaction.
+- A mobile device, laptop, tablet, OTP, PIN, password, or biometric method must not independently determine the fraud classification.
+- Recommend additional authentication when the combined evidence warrants it.
+
+## RULE 12: MERCHANT, LOCATION, AND TRANSACTION TYPE
+
+- Consider `Merchant_Category`, `Location`, and `Transaction_Type` as contextual features.
+- Compare these fields with established customer behavior only when reliable historical data is available.
+- Do not assume that a particular location, merchant category, or transaction channel is inherently suspicious.
+- If no historical profile is available, state that behavioral consistency cannot be verified.
+
+## RULE 13: EVIDENCE-BASED RISK ASSESSMENT
+
+- Separate the assessment into:
+  1. ML prediction.
+  2. Verified numerical risk score, if available.
+  3. Directly observed risk indicators.
+  4. Contextual indicators.
+  5. Missing or unverified information.
+- Give priority to explicit, applicable SOP rules rather than unsupported assumptions.
+- Do not count multiple correlated indicators as independent proof of fraud.
+- Do not invent a combined risk score or weighted formula unless it has been explicitly defined and implemented.
+- Explain why each indicator supports or does not support further review.
+
+## RULE 14: OVERALL RISK CLASSIFICATION
+
+Assign an overall investigation status using the following decision rules:
+
+**A. Potential Fraud — ML Flagged**
+- The ML model predicts `Fraud_Label = 1`.
+- Recommend review according to the applicable fraud policy.
+- Do not describe fraud as confirmed.
+
+**B. High Risk — Rule Triggered**
+- A verified numerical risk score meets the documented high-risk threshold, or a defined high-priority rule is triggered.
+- Identify the exact rule and supporting evidence.
+- If the ML model predicts non-fraud, explicitly report the disagreement.
+- Recommend further verification or investigation.
+
+**C. Elevated Risk — Multiple Indicators**
+- Multiple relevant indicators warrant additional review, but no verified high-risk threshold has been met.
+- Explain the indicators and recommend proportionate review.
+
+**D. Lower Indicated Risk**
+- The ML model predicts `Fraud_Label = 0`.
+- No verified high-risk rule is triggered.
+- No significant adverse indicators are identified in the available fields.
+- Describe the transaction as lower indicated risk, not guaranteed legitimate.
+
+**E. Insufficient Information**
+- A required score, model output, field definition, or threshold is missing, invalid, or ambiguous.
+- State what is missing and avoid assigning an unsupported risk category.
+
+A high-priority rule may override a lower-priority assessment for investigation purposes, but it must not silently alter the ML prediction.
+
+## RULE 15: CONFLICTING SIGNALS
+
+- If the ML prediction and a verified independent risk indicator disagree, report the disagreement explicitly.
+- Do not automatically label the disagreement a false positive or false negative. Actual transaction outcomes are required to establish these errors.
+- If the model predicts non-fraud but a verified high-risk rule is triggered, recommend investigation.
+- If the model predicts fraud but other indicators appear normal, retain the model's prediction and explain the available counter-indicators.
+- Never treat a non-fraud prediction as proof of legitimacy.
+
+## RULE 16: RAG KNOWLEDGE RETRIEVAL
+
+- Retrieve relevant rules from the fraud detection SOP knowledge base before preparing the final investigation report.
+- Apply only retrieved rules that are relevant to the supplied transaction.
+- Distinguish retrieved policy statements from the transaction facts and model outputs.
+- If a relevant rule cannot be retrieved, report that limitation rather than fabricating a rule.
+- Do not claim that a rule was retrieved unless it is present in the retrieved context.
+
+## RULE 17: AGENTIC AI INVESTIGATION
+
+The AI Investigator must:
+
+1. Read the supplied transaction fields and ML prediction.
+2. Validate the availability and meaning of the risk score.
+3. Retrieve applicable SOP rules.
+4. Evaluate relevant indicators against defined thresholds.
+5. Identify contradictions and missing information.
+6. Assign a supported investigation status.
+7. Recommend proportionate mitigation actions.
+8. Produce the required structured report.
+
+The AI Investigator must not invent model explanations, customer history, thresholds, probabilities, or compliance obligations.
+
+## RULE 18: ACTION AUTHORIZATION
+
+- The AI Investigator may recommend manual review, additional authentication, or escalation.
+- It must not independently suspend accounts, block cards, decline payments, or modify customer records unless an explicitly authorized and tested control system permits the action.
+- Recommendations must be distinguished from actions

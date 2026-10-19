@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
 import streamlit as st
 from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
-
+from agent import investigation_report
 # ------------------------------------------------------Loading the data------------------------------------------
 data = pd.read_csv("synthetic_fraud_dataset.csv")
 
@@ -44,7 +44,7 @@ encoded_df = pd.DataFrame(encoded_data, columns = encoded_cols)
 df = pd.concat([data.drop(columns = ohe_cols + omit_columns), encoded_df], axis=1)
 print(df.head())
 print(df.dtypes)
-df.to_csv("cleaned_df.csv")
+# df.to_csv("cleaned_df.csv")
 
 # ------------------------------------------------------selecting feature and targets------------------------------------------
 x = df.drop(columns = ['Fraud_Label'])
@@ -106,7 +106,7 @@ with st.form("credit_card form"):
     submit = st.form_submit_button('submit', type='primary')
 
 
-user_data = pd.DataFrame([{
+user_data = {
     'Transaction_Amount' : trs_amount,
     'Transaction_Type' : trs_type,
     'Account_Balance' : acc_balance,
@@ -129,21 +129,24 @@ user_data = pd.DataFrame([{
     'Card_Age' : card_age,
     'Risk_Score' : risk_score,
     'Transaction_Distance' : tr_distance
-}])
+}
+
+input_data = pd.DataFrame([user_data])
 
 
-user_encode = encoder.transform(user_data[ohe_cols])
+user_encode = encoder.transform(input_data[ohe_cols])
 user_encoded_df = pd.DataFrame(user_encode, columns = encoder.get_feature_names_out(ohe_cols))
-user_df = pd.concat([user_data.drop(columns= ohe_cols, errors='ignore'), user_encoded_df], axis=1)
+user_df = pd.concat([input_data.drop(columns= ohe_cols, errors='ignore'), user_encoded_df], axis=1)
 user_df = user_df.reindex(columns=x.columns, fill_value=0)
 
 if submit:
     user_pred = xg.predict(user_df)[0]
+    pred_lable = "Fraud" if user_pred == 1 else "Not Fraud"
     if user_pred == 0:
         print(user_pred)
         st.success("The Card is not fraud ✔")
     else:
-        st.error("The Card is Fraud ❌")
+        st.error("The Card is Fraud ⚠")
 
 # ------------------------------------------------------model predictions------------------------------------------
     model_pred = xg.predict(xts_sc)
@@ -156,3 +159,15 @@ if submit:
     f1 = st.write ("f1 score: ", round(f1_score(y_test, model_pred)*100, 2))
     roc_auc = st.write("ROC-AUC Score: ", round(roc_auc_score(y_test, model_pred)*100, 2))
     con_matrix = st.write("Confusion Matrix: ", confusion_matrix(y_test, model_pred))
+
+# -------------------------------------------------AI Agent Investigation Report------------------------------------------------------------
+    with st.sidebar:
+        st.markdown("<h3 style='color:orange; text-align:center;'>AI Agent Investigation Report</h3>", unsafe_allow_html=True)
+        with st.spinner("Generating Investigation Report..."):
+            try:
+                report = investigation_report(user_input=user_data, prediction_label=pred_lable)
+                st.markdown(report)
+            except Exception as e:
+                st.error(f"The generation is stopped. Check the backend for error: {e}")
+
+#  streamlit run model.py
