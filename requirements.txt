@@ -5,4 +5,5 @@ scikit-learn
 xgboost
 agno
 openai
+chromadb
 python-dotenv
