@@ -14,6 +14,7 @@ venv/
 
 # Local configuration
 .vscode/
+.devcontainer/
 
 # Local databases, logs, and agent memory
 tmp/
