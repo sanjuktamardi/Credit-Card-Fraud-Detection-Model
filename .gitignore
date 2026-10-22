@@ -14,7 +14,7 @@ venv/
 
 # Local configuration
 .vscode/
-.devcontainer/
+.devcontainer/devcontainer.json
 
 # Local databases, logs, and agent memory
 tmp/
