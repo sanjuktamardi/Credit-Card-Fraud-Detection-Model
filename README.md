@@ -15,8 +15,6 @@ The system uses an **XGBoost classifier** to predict whether a transaction is fr
 
 The project demonstrates how traditional machine learning can be combined with generative AI and retrieval-based knowledge grounding to support fraud analysis.
 
-> **Disclaimer:** This is an educational project using synthetic transaction data. It is not a production banking system and should not be used to make real financial decisions.
-
 ## ✨ Features
 
 ### 🤖 Machine Learning-Based Fraud Detection
