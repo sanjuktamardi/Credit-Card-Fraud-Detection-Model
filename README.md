@@ -227,14 +227,6 @@ This project explores:
 - LLM integration through OpenRouter.
 - Combining model predictions with compliance-oriented AI analysis.
 
-## 👩‍💻 Author
-
-**Sanjukta Mardi**
-
-B.Tech in Computer Science | AI/ML Enthusiast
-
-- GitHub: [@sanjuktamardi](https://github.com/sanjuktamardi)
-- Project: [Trivexa AI](https://trivexa-ai.streamlit.app/)
 
 ---
 
