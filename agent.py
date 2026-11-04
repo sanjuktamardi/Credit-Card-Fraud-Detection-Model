@@ -1,10 +1,9 @@
 import os
+import streamlit as st
 from agno.agent import Agent
 from agno.models.openrouter import OpenRouterResponses
-from dotenv import load_dotenv
 from agno.knowledge.knowledge import Knowledge
 from agno.vectordb.chroma import ChromaDb
-load_dotenv()
 
 compilance_file = "bank_compilance_rules.txt"
 if not os.path.exists(compilance_file):
@@ -14,9 +13,9 @@ else:
         rules = f.read()
     print("RAG system have accessed the file contents")
 
-def investigation_report(user_input: dict, prediction_label: str, model_id = "liquid/lfm-2.5-2.6b:free") -> str:
+def investigation_report(user_input: dict, prediction_label: str, model_id = "nvidia/nemotron-3.5-super-vl:free") -> str:
     model_provider = OpenRouterResponses(id = model_id,
-                                api_key = os.getenv("OPENROUTER_API_KEY"))
+                                api_key = st.secrets.get("OPENROUTER_API_KEY"),)
 
     knowledge_base = Knowledge(
        name = "fraud detection knowledge base",
