@@ -103,7 +103,7 @@ with st.form("credit_card form"):
     card_age = st.number_input("Enter the Card Age: ", min_value=0)
     risk_score = st.number_input("Enter the Risk Score: ")
     tr_distance = st.number_input("Enter the transaction distance: ")
-    submit = st.form_submit_button('submit', type='primary')
+    submit = st.form_submit_button('submit', type='primary', use_container_width=True)
 
 
 user_data = {
