@@ -1,5 +1,6 @@
 import os
 import streamlit as st
+from pathlib import Path
 from agno.agent import Agent
 from agno.models.openrouter import OpenRouterResponses
 from agno.knowledge.knowledge import Knowledge
@@ -13,10 +14,10 @@ else:
         rules = f.read()
     print("RAG system have accessed the file contents")
 
-def investigation_report(user_input: dict, prediction_label: str, model_id = "nvidia/nemotron-3.5-super-vl:free") -> str:
-    model_provider = OpenRouterResponses(id = model_id,
-                                api_key = st.secrets.get("OPENROUTER_API_KEY"),)
 
+@st.cache_resource
+def load_knowledge_base(rules_version):
+        
     knowledge_base = Knowledge(
        name = "fraud detection knowledge base",
        description="Agno 2.0 Knowledge Implementation with fraud detection SOP rules",
@@ -28,6 +29,16 @@ def investigation_report(user_input: dict, prediction_label: str, model_id = "nv
     knowledge_base.insert(
     name="fraud detection assistant",
     path=compilance_file,)
+
+    return knowledge_base
+
+def investigation_report(user_input: dict, prediction_label: str, model_id = "nvidia/nemotron-3.5-super-vl:free") -> str:
+    model_provider = OpenRouterResponses(id = model_id,
+                                         api_key = st.secrets.get("OPENROUTER_API_KEY"),
+                                        )
+    rules = Path(compilance_file).stat().st_mtime_ns
+
+    knowledge_base = load_knowledge_base(rules_version=rules)
 
     # Agno agent
     agent = Agent(
