@@ -1,6 +1,6 @@
 ﻿# 🛡️ Trivexa AI — Credit Card Fraud Detection & Investigation
 
-An AI-powered credit card fraud detection system that combines **Machine Learning, Retrieval-Augmented Generation (RAG), and an AI agent** to classify transactions and generate compliance-oriented fraud investigation reports.
+An AI-powered credit card fraud detection system combining **Machine Learning, Retrieval-Augmented Generation (RAG), and AI agents** to classify transactions and generate compliance-oriented fraud investigation reports.
 
 🔗 **Live Demo:** [Trivexa AI](https://trivexa-ai.streamlit.app/)  
 💻 **GitHub Repository:** [Credit-Card-Fraud-Detection-Model](https://github.com/sanjuktamardi/Credit-Card-Fraud-Detection-Model)
@@ -9,9 +9,11 @@ An AI-powered credit card fraud detection system that combines **Machine Learnin
 
 ## 📌 Overview
 
-Trivexa AI is a machine learning project designed to identify potentially fraudulent credit card transactions and assist with their investigation.
+Trivexa AI is a machine learning application designed to identify potentially fraudulent credit card transactions and assist with their investigation.
 
-The system uses an **XGBoost classifier** to predict whether a transaction is fraudulent or genuine. It also integrates an **Agno AI agent** with a ChromaDB-backed knowledge base containing banking compliance rules. The agent uses transaction details, the model's prediction, and compliance information to generate a structured investigation report.
+The system uses an **XGBoost classifier** to predict whether a transaction is fraudulent or genuine. It also integrates an **Agno AI agent** with a ChromaDB-backed knowledge base containing banking compliance rules and Standard Operating Procedures (SOPs).
+
+The AI agent receives transaction information and the model's prediction, retrieves relevant compliance knowledge, and generates a structured investigation report.
 
 The project demonstrates how traditional machine learning can be combined with generative AI and retrieval-based knowledge grounding to support fraud analysis.
 
@@ -21,54 +23,74 @@ The project demonstrates how traditional machine learning can be combined with g
 - Uses XGBoost for binary transaction classification.
 - Performs feature engineering on transaction timestamps.
 - Applies one-hot encoding to categorical transaction features.
+- Uses feature scaling for model inputs.
 - Displays classification metrics and a confusion matrix.
 
 ### 🧠 AI-Powered Fraud Investigation
 - Integrates an AI agent using the Agno framework.
-- Uses an LLM accessed through OpenRouter.
-- Generates structured investigation reports from transaction details and model predictions.
+- Connects to LLMs through OpenRouter.
+- Analyzes transaction details alongside the ML prediction.
+- Generates structured investigation reports.
 - Provides risk indicators, supporting evidence, and recommended mitigation actions.
 
 ### 📚 RAG-Based Compliance Knowledge
 - Uses ChromaDB as the vector database.
-- Loads banking compliance and standard operating procedure (SOP) rules from `bank_compilance_rules.txt`.
-- Configures the Agno knowledge base for retrieval.
-- Instructs the agent to reference relevant compliance sections and identify missing information.
+- Loads banking compliance and SOP rules from `bank_compilance_rules.txt`.
+- Uses Agno Knowledge for knowledge-base integration.
+- Enables the agent to retrieve relevant compliance information.
+- Encourages evidence-based analysis and identification of missing information.
+
+### ⚡ Performance Optimization
+- Uses Streamlit caching to avoid unnecessary repeated model initialization and training.
+- Separates model training logic into `model_training.py`.
+- Keeps the Streamlit interface and transaction interaction logic in `model.py`.
+- Separates reusable knowledge-base initialization from transaction-specific report generation.
 
 ### 🖥️ Interactive Streamlit Interface
 - Accepts transaction details through an interactive form.
-- Displays the fraud classification result.
+- Displays fraud classification results.
 - Presents model evaluation metrics.
-- Shows the AI-generated investigation report in the sidebar.
+- Shows the AI-generated investigation report.
 
 ## 🏗️ System Architecture
 
 ```mermaid
 flowchart TD
-    A[Transaction Details] --> B[Feature Engineering]
-    B --> C[Categorical Encoding]
+    A[Transaction Dataset] --> B[model_training.py]
+    B --> C[Preprocessing and Feature Engineering]
     C --> D[XGBoost Classifier]
-    D --> E[Fraud Prediction]
-    A --> F[Agno AI Agent]
-    E --> F
-    G[Bank Compliance Rules] --> H[Agno Knowledge Base]
-    H <--> I[ChromaDB Vector Database]
-    I --> F
-    F --> J[OpenRouter LLM]
-    J --> K[Investigation Report]
-    E --> L[Streamlit Interface]
-    K --> L
+    D --> E[Cached Trained Model]
+
+    F[User Transaction Input] --> G[model.py]
+    G --> H[Input Preprocessing]
+    H --> I[Fraud Prediction]
+    E --> I
+
+    I --> J[Agno AI Agent]
+    F --> J
+
+    K[Bank Compliance Rules] --> L[Agno Knowledge Base]
+    L <--> M[ChromaDB Vector Database]
+    M --> J
+
+    J --> N[OpenRouter LLM]
+    N --> O[Investigation Report]
+
+    I --> P[Streamlit Interface]
+    O --> P
 ```
 
 ## 🔄 How It Works
 
-1. **Transaction input:** The user enters transaction information through the Streamlit interface.
-2. **Feature engineering:** Timestamp information is transformed into hour, date, month, day-of-week, and night-transaction features.
-3. **Categorical preprocessing:** Selected categorical fields are converted into numerical features using one-hot encoding.
-4. **Fraud classification:** The XGBoost model predicts whether the transaction is fraudulent or genuine.
-5. **Knowledge retrieval:** The Agno agent is configured to search a ChromaDB-backed knowledge base containing banking compliance rules.
-6. **AI investigation:** The agent receives the transaction details and model prediction and generates a structured report using the compliance context.
-7. **Results display:** The application displays the model prediction, evaluation metrics, and investigation report.
+1. **Data loading:** The application loads the synthetic transaction dataset.
+2. **Preprocessing:** Transaction timestamps are transformed into useful features, including hour, date, month, day of the week, and night-transaction indicators.
+3. **Categorical encoding:** Selected categorical features are converted into numerical representations using one-hot encoding.
+4. **Model training:** `model_training.py` handles preprocessing, feature scaling, train-test splitting, and XGBoost model training.
+5. **Caching:** Streamlit caches the trained model and associated resources to reduce unnecessary repeated initialization.
+6. **Transaction prediction:** The user submits transaction details through the Streamlit interface, and the trained model predicts whether the transaction is fraudulent or genuine.
+7. **Knowledge retrieval:** The Agno agent uses a ChromaDB-backed knowledge base containing banking compliance rules.
+8. **AI investigation:** The agent receives the transaction details and model prediction and generates a structured compliance-oriented report.
+9. **Results display:** The Streamlit application presents the prediction, evaluation metrics, and investigation report.
 
 ## 🛠️ Tech Stack
 
@@ -82,7 +104,8 @@ flowchart TD
 | AI Agent Framework | Agno |
 | Retrieval-Augmented Generation | Agno Knowledge, ChromaDB |
 | LLM Integration | OpenRouter |
-| Environment Configuration | python-dotenv |
+| Performance Optimization | Streamlit Caching |
+| Environment Configuration | Streamlit Secrets / Environment Variables |
 
 ## 📂 Project Structure
 
@@ -90,32 +113,49 @@ flowchart TD
 Credit-Card-Fraud-Detection-Model/
 │
 ├── model.py
-│   └── Data preprocessing, feature engineering,
-│       model training, Streamlit UI and predictions
+│   └── Main Streamlit application, user inputs,
+│       transaction predictions, metrics and UI
+│
+├── model_training.py
+│   └── Dataset loading, preprocessing, feature engineering,
+│       encoding, scaling, XGBoost training and caching
 │
 ├── agent.py
-│   └── Agno agent, knowledge-base setup,
-│       compliance context and investigation reports
+│   └── Agno AI agent, knowledge-base initialization,
+│       compliance context and investigation report generation
 │
 ├── bank_compilance_rules.txt
 │   └── Banking compliance rules and SOP reference
 │
 ├── synthetic_fraud_dataset.csv
-│   └── Synthetic transaction dataset
+│   └── Synthetic credit card transaction dataset
 │
 ├── cleaned_df.csv
-│   └── Cleaned or processed dataset artifact
+│   └── Cleaned or processed dataset artifact (if retained)
 │
 ├── requirements.txt
-│   └── Python dependencies
+│   └── Python project dependencies
 │
 ├── .example.env
-│   └── Example environment configuration
+│   └── Example environment configuration (if used)
 │
 ├── .gitignore
+│   └── Excludes sensitive files, virtual environments
+│       and generated runtime artifacts
 │
 └── README.md
+    └── Project documentation
 ```
+
+**Runtime-generated resources:**
+
+```text
+tmp/
+└── chromadb/
+    └── Persistent ChromaDB vector database files
+```
+
+The ChromaDB directory is generated or populated when the knowledge base is initialized. It does not need to be committed as part of the source code.
 
 ## ⚙️ Installation and Setup
 
@@ -138,98 +178,4 @@ cd Credit-Card-Fraud-Detection-Model
 ### 2. Create a Virtual Environment
 
 ```bash
-python -m venv .venv
-```
-
-Activate it on Windows PowerShell:
-
-```powershell
-.venv\Scripts\Activate.ps1
-```
-
-On macOS or Linux:
-
-```bash
-source .venv/bin/activate
-```
-
-### 3. Install Dependencies
-
-```bash
-python -m pip install -r requirements.txt
-```
-
-### 4. Configure Environment Variables
-
-Create a `.env` file in the project root and add your OpenRouter API key:
-
-```env
-OPENROUTER_API_KEY=your_openrouter_api_key
-```
-
-Replace the placeholder with your own API key. Never commit `.env` or expose your API key in a public repository.
-
-### 5. Run the Application
-
-```bash
-streamlit run model.py
-```
-
-Open the local URL displayed in your terminal, usually:
-
-```text
-http://localhost:8501
-```
-
-**Note:** The current application reads `synthetic_fraud_dataset.csv` from the project directory. Ensure that the dataset is available before launching the application.
-
-## 📊 Model Evaluation
-
-The application reports the following classification metrics:
-
-- **Accuracy:** Overall proportion of correctly classified transactions.
-- **Precision:** Proportion of transactions predicted as fraudulent that are actually fraudulent.
-- **Recall:** Proportion of actual fraudulent transactions correctly identified.
-- **F1-score:** Harmonic mean of precision and recall.
-- **ROC-AUC:** Measures the model's ability to distinguish between the two classes when calculated using prediction probabilities.
-- **Confusion Matrix:** Summarizes true positives, true negatives, false positives, and false negatives.
-
-The current implementation calculates these metrics on a held-out test split. However, the preprocessing and prediction pipeline should be made consistent and the ROC-AUC calculation should use predicted probabilities before treating the reported results as validated performance.
-
-No fixed accuracy score is claimed in this README.
-
-## 🔐 Security and Responsible Use
-
-- Keep API keys and other credentials in environment variables or a secure secrets manager.
-- Do not upload real cardholder information or sensitive banking data to this demonstration application.
-- Treat AI-generated reports as decision-support content, not authoritative financial or compliance decisions.
-- Validate model performance, preprocessing, and retrieval quality before considering any real-world application.
-
-## 🚧 Limitations and Future Improvements
-
-- Correct preprocessing consistency between model training and user-input predictions.
-- Improve the evaluation pipeline and document verified results.
-- Strengthen retrieval validation and provide traceable references to retrieved compliance rules.
-- Add automated tests for preprocessing, classification, and report generation.
-- Improve error handling for missing data, API failures, and knowledge-base issues.
-- Explore explainability techniques to make model predictions easier to interpret.
-- Evaluate the system using suitable real-world data only when it can be obtained and handled lawfully.
-
-## 🎯 Learning Outcomes
-
-This project explores:
-
-- End-to-end machine learning workflows for binary classification.
-- Feature engineering and categorical data preprocessing.
-- Interactive ML application development with Streamlit.
-- AI agent development using Agno.
-- Retrieval-based knowledge integration using ChromaDB.
-- LLM integration through OpenRouter.
-- Combining model predictions with compliance-oriented AI analysis.
-
-
----
-
-⭐ If you find this project interesting, consider exploring the repository and sharing feedback.
-
-**Built as an educational project exploring Machine Learning, RAG, and AI agents for fraud investigation.**
+python -m v
